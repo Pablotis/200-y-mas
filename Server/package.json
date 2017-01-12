@@ -1,0 +1,17 @@
+{
+  "name": "server",
+  "version": "0.1.0",
+  "description": "server for #200+",
+  "main": "main.js",
+  "scripts": {
+    "debug": "node main -d",
+    "start": "node main",
+    "help": "node main -h"
+  },
+  "author": "",
+  "license": "ISC",
+  "repository": "https://github.com/Pablotis/200-y-mas",
+  "dependencies": {
+    "mongo": "^0.1.0"
+  }
+}
