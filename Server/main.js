@@ -54,8 +54,10 @@ if (cluster.isMaster) {
 	stdin.on("data", function(d) {
 		stdin.on("data",function(){console.log("Cannot enter any command");});
 		var HOST = selectable[d.toString().trim()];
+		//HOST = 1;
 		if(HOST == null){
 			console.log(d.toString().trim()+" is not a valid option");
+			return;
 			exitError();
 		}
 		if(debug)console.log("Running in debug mode");
@@ -131,9 +133,9 @@ if (cluster.isMaster) {
 					//if(data.length > limit){processData(data.slice(limit));}
 					answer = Buffer.from([0,data.readUInt8(1),VERSION]);//Answer requested command, request ID and VERSION
 					break;
-				default://Info request
-					limit = 2;
-					this.db.find({}).toArray(function(error,result){
+				case 1://Info request
+					limit = 102;
+					this.db.find({$or:[{publish_state:0},{user_id:data.slice(2,102).toString('utf8')}]}).sort({number:-1,_id:-1}).toArray(function(error,result){
 						try{
 							if(error != null)throw new Error("Couldn't get from db: "+error);
 							accessible = false;
@@ -150,6 +152,23 @@ if (cluster.isMaster) {
 						}catch(error){handleError(error);}
 					});
 					break;
+				case 2:
+					limit = 2;
+					socket.destroy();
+					break;
+				case 3:
+					size = data.readUInt32BE(102);
+					limit = 106+size;
+					contents = JSON.parse(data.slice(106,106+size).toString('utf8'));
+					this.db.insert({number:2000000000,publish_state:1,content:contents.valor,user:contents.name,user_id:data.slice(2,102).toString('utf8')},function(error,result){
+						try{
+							if(error != null)throw new Error("Couldn't get from db: "+error);
+							answer = Buffer.from([3,data.readUInt8(1)]);
+							send(answer);
+						}catch(error){handleError(error);}
+						});
+					//this.db.insertOne({number:0,publish_state:1,content,user,user_id:});
+					break;
 				}
 				
 				if(answer != null){send(answer);}
@@ -161,15 +180,7 @@ if (cluster.isMaster) {
 		}
 		
 		socket.on('data', function(data) {
-			if(debug){
-				console.log("Received "+data.length+" bytes"+(completeDebug?": "+JSON.stringify(data):""));
-				/*message = "Data: ";
-					for(a=0;a < data.length;a++){
-						message += data.readUInt8(a)+", ";
-					}
-					console.log(message);
-					console.log(answer);*/
-			}
+			if(debug)console.log("Received "+data.length+" bytes"+(completeDebug?": "+JSON.stringify(data):""));
 			processData(data);
 		});
 		

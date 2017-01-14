@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">#200+</string>
+    <string name="valor_num">Valor #%03d</string>
+    <string name="valor_not_published">Valor pendiente de publicación</string>
+    <string name="processing_valor">Tu envío se está revisando y será públicado en cuanto esté listo</string>
+    <string name="not_published">Tu envío no se ha publicado por contener contenido inapropiado</string>
+    <string name="published_by">Publicado por %1$s el %2$s a las %3$s</string>
+    <string name="public_name">Tu nombre público</string>
+    <string name="content">Contenido</string>
+    <string name="new_valor">Nuevo valor</string>
+    <string name="supervision_info">Todas los nuevas entradas que se envíen serán revisadas manualmente, no incluyas contenido o lenguaje inapropiado</string>
+    <string name="submit">Enviar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="sending">Enviando</string>
 </resources>
