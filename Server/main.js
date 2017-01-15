@@ -132,27 +132,29 @@ if (cluster.isMaster) {
 							response.writeHead(200, {
 								'Content-Type': 'text/html;charset=utf-8'
 							});
+							responsedata = '';
 							if (publishedrequested == -1)
-								response.write('<span>Todo</span>&nbsp;');
+								responsedata += ('<span>Todo</span>&nbsp;');
 							else
-								response.write('<a href="/">Todo</a>&nbsp;');
+								responsedata += ('<a href="/">Todo</a>&nbsp;');
 							if (publishedrequested == 0)
-								response.write('<span>Publicado</span>&nbsp;');
+								responsedata += ('<span>Publicado</span>&nbsp;');
 							else
-								response.write('<a href="/?filter=0">Publicado</a>&nbsp;');
+								responsedata += ('<a href="/?filter=0">Publicado</a>&nbsp;');
 							if (publishedrequested == 1)
-								response.write('<span>Pendiente de revisión</span>&nbsp;');
+								responsedata += ('<span>Pendiente de revisión</span>&nbsp;');
 							else
-								response.write('<a href="/?filter=1">Pendiente de revisión</a>&nbsp;');
+								responsedata += ('<a href="/?filter=1">Pendiente de revisión</a>&nbsp;');
 							if (publishedrequested == 2)
-								response.write('<span>Denegado</span>&nbsp;');
+								responsedata += ('<span>Denegado</span>&nbsp;');
 							else
-								response.write('<a href="/?filter=2">Denegado</a>&nbsp;');
-							response.write('</br><table><tr><th>id</th><th>número #</th><th>estado de la publicación</th><th>contenido</th><th>usuario</th><th>Likes</th></tr>');
+								responsedata += ('<a href="/?filter=2">Denegado</a>&nbsp;');
+							responsedata += ('</br><table><tr><th>id</th><th>número #</th><th>estado de la publicación</th><th>contenido</th><th>usuario</th><th>Likes</th></tr>');
 							for (time = 0; time < result.length; time++) {
-								response.write('<tr><th>' + result[time]._id + '</th><th>' + result[time].number + '</th><th>' + (result[time].publish_state == 0 ? "publicado" : (result[time].publish_state == 2 ? "denegado" : "pendiente de revisión")) + '</th><th>' + result[time].content + '</th><th>' + result[time].user + '</th><th>' + result[time].likes.length + '</th><th><button onclick=\'location.href="/publish?id=' + result[time]._id + '"\'>Publicar</button></th><th><button onclick=\'location.href="/deny?id=' + result[time]._id + '"\'>Denegar</button></th><th><button onclick=\'location.href="/restore?id=' + result[time]._id + '"\'>Restablecer</button></th><!--<th><button onclick=\'location.href="/updatenumber?id=' + result[time]._id + '"\'>Actualizar número</button></th>--></tr>');
+								responsedata += ('<tr><th>' + result[time]._id + '</th><th>' + result[time].number + '</th><th>' + (result[time].publish_state == 0 ? "publicado" : (result[time].publish_state == 2 ? "denegado" : "pendiente de revisión")) + '</th><th>' + result[time].content + '</th><th>' + result[time].user + '</th><th>' + result[time].likes.length + '</th><th><button onclick=\'location.href="/publish?id=' + result[time]._id + '"\'>Publicar</button></th><th><button onclick=\'location.href="/deny?id=' + result[time]._id + '"\'>Denegar</button></th><th><button onclick=\'location.href="/restore?id=' + result[time]._id + '"\'>Restablecer</button></th><!--<th><button onclick=\'location.href="/updatenumber?id=' + result[time]._id + '"\'>Actualizar número</button></th>--></tr>');
 							}
-							response.end('</table>');
+							responsedata += '</table>';
+							response.end(responsedata);
 						}
 					});
 					break;
