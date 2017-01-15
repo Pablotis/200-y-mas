@@ -8,7 +8,7 @@
     <string name="public_name">Tu nombre público</string>
     <string name="content">Contenido</string>
     <string name="new_valor">Nuevo valor</string>
-    <string name="supervision_info">Todas los nuevas entradas que se envíen serán revisadas manualmente, no incluyas contenido o lenguaje inapropiado</string>
+    <string name="supervision_info">Todas los nuevas entradas que se envíen serán revisadas manualmente antes de publicarse, no incluyas contenido o lenguaje inapropiado</string>
     <string name="submit">Enviar</string>
     <string name="cancel">Cancelar</string>
     <string name="sending">Enviando</string>

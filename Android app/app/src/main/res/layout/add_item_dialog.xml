@@ -52,4 +52,18 @@
             android:inputType="textMultiLine" />
     </android.support.design.widget.TextInputLayout>
 
+    <TextView
+        android:id="@+id/infoText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="0dp"
+        android:text="@string/supervision_info"
+        android:textAlignment="center"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textStyle="italic"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/valorTextLayout" />
+
 </android.support.constraint.ConstraintLayout>

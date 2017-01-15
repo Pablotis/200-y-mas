@@ -56,6 +56,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.VH> {
                 list.add(position, item);
                 //Collections.swap(list, position, a);
                 notifyItemMoved(a, position);
+                notifyItemChanged(position);
             }
         }
     }
