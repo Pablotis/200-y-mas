@@ -52,6 +52,7 @@ if (cluster.isMaster) {
 		}
 		stdin.on("data", function () {
 			console.log("Cannot enter any command");
+			return;
 		});
 		if (debug)
 			console.log("Running in debug mode");
@@ -99,6 +100,14 @@ if (cluster.isMaster) {
 				params = parsedurl.query;
 				if (debug)
 					console.log("Requested http");
+				if (request.headers.authorization != "Basic YWRtaW46eGRsb2w=") {
+					response.writeHead(401, {
+						'Content-Type': 'text/html;charset=utf-8',
+						'WWW-Authenticate': 'Basic realm="management"'
+					});
+					response.end("Es necesaria la autentificación");
+					return;
+				}
 				switch (parsedurl.pathname) {
 				case "/":
 					publishedrequested = parseInt(params.filter);
@@ -139,9 +148,9 @@ if (cluster.isMaster) {
 								response.write('<span>Denegado</span>&nbsp;');
 							else
 								response.write('<a href="/?filter=2">Denegado</a>&nbsp;');
-							response.write('</br><table><tr><th>id</th><th>número #</th><th>estado de la publicación</th><th>contenido</th><th>usuario</th></tr>');
+							response.write('</br><table><tr><th>id</th><th>número #</th><th>estado de la publicación</th><th>contenido</th><th>usuario</th><th>Likes</th></tr>');
 							for (time = 0; time < result.length; time++) {
-								response.write('<tr><th>' + result[time]._id + '</th><th>' + result[time].number + '</th><th>' + (result[time].publish_state == 0 ? "publicado" : (result[time].publish_state == 2 ? "denegado" : "pendiente de revisión")) + '</th><th>' + result[time].content + '</th><th>' + result[time].user + '</th><th><button onclick=\'location.href="/publish?id=' + result[time]._id + '"\'>Publicar</button></th><th><button onclick=\'location.href="/deny?id=' + result[time]._id + '"\'>Denegar</button></th><th><button onclick=\'location.href="/restore?id=' + result[time]._id + '"\'>Restablecer</button></th><!--<th><button onclick=\'location.href="/updatenumber?id=' + result[time]._id + '"\'>Actualizar número</button></th>--></tr>');
+								response.write('<tr><th>' + result[time]._id + '</th><th>' + result[time].number + '</th><th>' + (result[time].publish_state == 0 ? "publicado" : (result[time].publish_state == 2 ? "denegado" : "pendiente de revisión")) + '</th><th>' + result[time].content + '</th><th>' + result[time].user + '</th><th>' + result[time].likes.length + '</th><th><button onclick=\'location.href="/publish?id=' + result[time]._id + '"\'>Publicar</button></th><th><button onclick=\'location.href="/deny?id=' + result[time]._id + '"\'>Denegar</button></th><th><button onclick=\'location.href="/restore?id=' + result[time]._id + '"\'>Restablecer</button></th><!--<th><button onclick=\'location.href="/updatenumber?id=' + result[time]._id + '"\'>Actualizar número</button></th>--></tr>');
 							}
 							response.end('</table>');
 						}
@@ -269,14 +278,23 @@ if (cluster.isMaster) {
 						answer = Buffer.from([0, data.readUInt8(1), VERSION]);
 						break;
 					case 1:
-						limit = 102;
-						this.db.find({
-							$or: [{
+						limit = 103;
+						userid = data.slice(3, 103).toString('utf8');
+						if (data[2] == 1) {
+							filter = [{
+									publish_state: 0
+								}
+							];
+						} else {
+							filter = [{
 									publish_state: 0
 								}, {
-									user_id: data.slice(2, 102).toString('utf8')
+									user_id: userid
 								}
-							]
+							]; ;
+						}
+						this.db.find({
+							$or: filter
 						}).sort({
 							number: -1,
 							_id: -1
@@ -285,8 +303,26 @@ if (cluster.isMaster) {
 								if (error != null)
 									throw new Error("Couldn't get from db: " + error);
 								accessible = false;
+								if (data[2] == 1) {
+									result.sort(function (a, b) {
+										return b.likes.length - a.likes.length;
+									});
+								}
+								sendcontent = [];
+								for (item in result) {
+									item = result[item];
+									sendcontent.push({
+										number: item.number,
+										publish_state: item.publish_state,
+										likes: item.likes.length,
+										content: item.content,
+										_id: item._id,
+										user: item.user,
+										own_like: item.likes.includes(userid)
+									});
+								}
 								sendData = JSON.stringify({
-										"data": result
+										"data": sendcontent
 									});
 								size = Buffer.byteLength(sendData);
 								answer = Buffer.alloc(size + 6);
@@ -313,7 +349,8 @@ if (cluster.isMaster) {
 							publish_state: 1,
 							content: contents.valor,
 							user: contents.name,
-							user_id: data.slice(2, 102).toString('utf8')
+							user_id: data.slice(2, 102).toString('utf8'),
+							likes: []
 						}, function (error, result) {
 							try {
 								if (error != null)
@@ -324,6 +361,25 @@ if (cluster.isMaster) {
 								handleError(error);
 							}
 						});
+						break;
+					case 4:
+						limit = 127;
+						if (data[2] == 1) {
+							updaterequest = {
+								$addToSet: {
+									likes: data.slice(3, 103).toString('utf8')
+								}
+							};
+						} else {
+							updaterequest = {
+								$pull: {
+									likes: data.slice(3, 103).toString('utf8')
+								}
+							};
+						}
+						this.db.update({
+							_id: ObjectId(data.slice(103, 127).toString('utf8'))
+						}, updaterequest);
 						break;
 					}
 					if (answer != null) {

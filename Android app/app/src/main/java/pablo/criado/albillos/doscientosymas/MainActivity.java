@@ -3,6 +3,7 @@ package pablo.criado.albillos.doscientosymas;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
@@ -37,8 +38,9 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     Socket socket;
     SwipeRefreshLayout swipeRefreshLayout;
-    Thread socketThread, readThread, updateDataThread, sendValorThread;
+    Thread socketThread, readThread, updateDataThread, sendValorThread, setLikeThread;
     ProgressDialog sendingDialog;
+    boolean showBest;
 
     private void connect() {
         if (socketThread != null) socketThread.interrupt();
@@ -149,8 +151,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     try {
-                        ByteBuffer buffer = ByteBuffer.allocate(102);
-                        buffer.put(new byte[]{1, 0});
+                        ByteBuffer buffer = ByteBuffer.allocate(103);
+                        buffer.put(new byte[]{1, 0, showBest ? (byte) 1 : 0});
                         buffer.put(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString("id", "").getBytes());
                         socket.getOutputStream().write(buffer.array());
                     } catch (IOException e) {
@@ -189,6 +191,27 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             sendValorThread.start();
+        }
+    }
+
+    public void setLike(final String id, final boolean like) {
+        if (socket == null || socket.isClosed()) connect();
+        else {
+            setLikeThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ByteBuffer buffer = ByteBuffer.allocate(127);
+                        buffer.put(new byte[]{4, 0, like ? (byte) 1 : 0});
+                        buffer.put(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString("id", "").getBytes());
+                        buffer.put(id.getBytes());
+                        socket.getOutputStream().write(buffer.array());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            setLikeThread.start();
         }
     }
 
@@ -285,20 +308,23 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        menu.getItem(0).getIcon().setColorFilter(0xFFFFFFFF, PorterDuff.Mode.SRC_ATOP);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        //int id = item.getItemId();
+        int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        /*if (id == R.id.action_settings) {
+        if (id == R.id.action_change_order) {
+            showBest = !showBest;
+            updateList();
+            item.setTitle(showBest ? R.string.show_latest : R.string.show_best);
+            item.setIcon(showBest ? R.drawable.ic_new_releases_black_24dp : R.drawable.ic_trending_up_black_24dp);
+            item.getIcon().setColorFilter(0xFFFFFFFF, PorterDuff.Mode.SRC_ATOP);
             return true;
-        }*/
+        }
 
         return super.onOptionsItemSelected(item);
     }

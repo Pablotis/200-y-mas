@@ -12,4 +12,6 @@
     <string name="submit">Enviar</string>
     <string name="cancel">Cancelar</string>
     <string name="sending">Enviando</string>
+    <string name="show_best">Mostrar más valorados</string>
+    <string name="show_latest">Mostrar más recientes</string>
 </resources>
