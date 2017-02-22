@@ -1,6 +1,5 @@
 package pablo.criado.albillos.doscientosymas;
 
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.graphics.PorterDuff;
@@ -30,7 +29,9 @@ import org.json.JSONObject;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
@@ -48,8 +49,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    if (socket == null || socket.isClosed())
-                        socket = new Socket("pablocloud.es", 2000);
+                    if (socket == null || socket.isClosed()) {
+                        socket = new Socket();
+                        socket.connect(new InetSocketAddress("pablocloud.es", 2000), 2000);
+                    }
                     if (readThread != null) readThread.interrupt();
                     readThread = new Thread(new Runnable() {
                         @Override
@@ -97,14 +100,9 @@ public class MainActivity extends AppCompatActivity {
                                 });
                             } catch (IOException e) {
                                 e.printStackTrace();
+                                showError();
                                 try {
                                     socket.close();
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            swipeRefreshLayout.setRefreshing(false);
-                                        }
-                                    });
                                 } catch (IOException e2) {
                                     e2.printStackTrace();
                                 }
@@ -115,6 +113,12 @@ public class MainActivity extends AppCompatActivity {
                     updateList();
                 } catch (IOException e) {
                     e.printStackTrace();
+                    showError();
+                    try {
+                        socket.close();
+                    } catch (IOException e2) {
+                        e2.printStackTrace();
+                    }
                     //readThread.interrupt();
                 }
             }
@@ -139,14 +143,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateList() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                swipeRefreshLayout.setRefreshing(true);
+            }
+        });
         if (socket == null || socket.isClosed()) connect();
         else {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    swipeRefreshLayout.setRefreshing(true);
-                }
-            });
             updateDataThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -157,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
                         socket.getOutputStream().write(buffer.array());
                     } catch (IOException e) {
                         e.printStackTrace();
+                        showError();
                     }
                 }
             });
@@ -187,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
                         socket.getOutputStream().write(buffer.array());
                     } catch (IOException | JSONException e) {
                         e.printStackTrace();
+                        showError();
                     }
                 }
             });
@@ -208,11 +214,22 @@ public class MainActivity extends AppCompatActivity {
                         socket.getOutputStream().write(buffer.array());
                     } catch (IOException e) {
                         e.printStackTrace();
+                        showError();
                     }
                 }
             });
             setLikeThread.start();
         }
+    }
+
+    private void showError() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                swipeRefreshLayout.setRefreshing(false);
+                ((ListAdapter) recyclerView.getAdapter()).setNoConnection();
+            }
+        });
     }
 
     @Override
@@ -241,7 +258,12 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new ListAdapter(this));
+        recyclerView.setAdapter(new ListAdapter(this, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateList();
+            }
+        }));
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override

@@ -14,4 +14,7 @@
     <string name="sending">Enviando</string>
     <string name="show_best">Mostrar más valorados</string>
     <string name="show_latest">Mostrar más recientes</string>
+    <string name="no_connection_title">Ups!!</string>
+    <string name="no_connection_subtitle">Parece que no hay conexión a Internet</string>
+    <string name="retry">Reinentar</string>
 </resources>
