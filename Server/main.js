@@ -23,32 +23,24 @@ const permisive = process.argv.indexOf("-p") > -1;
 const singleThreaded = process.argv.indexOf("-s") > -1;
 const completeDebug = process.argv.indexOf("-c") > -1;
 const help = process.argv.indexOf("-h") > -1;
-var db;
+var db, HOST;
+
 function exitError() {
 	console.log("Server load stopped");
 	process.exit();
 }
 if (help) {
-	console.log("#200+ server help message:\n -d Show debug messages\n -p Run in permissive mode\n -s Run in single-threaded mode\n -c Run in complete debug mode\n -h Show this message");
+	console.log("#200+ server help message:\n -d Show debug messages\n -p Run in permissive mode\n -s Run in single-threaded mode\n -c Run in complete debug mode\n -i Set default interface\n -h Show this message");
 	process.exit();
 }
 if (cluster.isMaster) {
-	console.log("Available network interfaces to run on:");
-	inter = os.networkInterfaces();
-	selectable = [];
-	for (index in inter) {
-		console.log("\t" + index);
-		for (vez = 0; vez < inter[index].length; vez++) {
-			console.log("\t\t" + selectable.length + ". " + inter[index][vez].address);
-			selectable.push(inter[index][vez].address);
-		}
-	}
-	process.stdout.write("Enter number of IP to run server on from the list above:");
-	stdin.on("data", function (d) {
-		var HOST = selectable[d.toString().trim()];
-		if (HOST == null) {
-			//console.log(d.toString().trim() + " is not a valid option");
-			return;
+	function setupFunction(d) {
+		if (d !== false) {
+			HOST = selectable[parseInt(d.toString())];
+			if (HOST == null) {
+				console.log(parseInt(d.toString()) + " is not a valid option");
+				return;
+			}
 		}
 		stdin.on("data", function () {
 			console.log("Cannot enter any command");
@@ -242,7 +234,32 @@ if (cluster.isMaster) {
 				throw "Couldn't connect to database";
 			}
 		});
-	});
+	}
+
+	interfaceposition = process.argv.indexOf("-i");
+	showInfo = interfaceposition == -1;
+
+	if (showInfo)
+		console.log("Available network interfaces to run on:");
+	inter = os.networkInterfaces();
+	selectable = [];
+	for (index in inter) {
+		if (showInfo)
+			console.log("\t" + index);
+		for (vez = 0; vez < inter[index].length; vez++) {
+			if (showInfo)
+				console.log("\t\t" + selectable.length + ". " + inter[index][vez].address);
+			selectable.push(inter[index][vez].address);
+		}
+	}
+
+	if (!showInfo) {
+		HOST = selectable[parseInt(process.argv[interfaceposition + 1])];
+		setupFunction(false);
+	} else {
+		process.stdout.write("Enter number of IP to run server on from the list above:");
+		stdin.on("data", setupFunction);
+	}
 } else {
 	var HOST = process.env.HOST;
 	mongoClient.connect(DATABASE_URL, function (error, db) {
